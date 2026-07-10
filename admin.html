@@ -678,7 +678,7 @@ window.saveConfig = async () => {
 };
 
 // ===== RENDER TABLE =====
-function renderTable() {
+window.renderTable = function() {
   const q = document.getElementById('searchAdmin').value.toLowerCase();
   const cat = document.getElementById('filterCatAdmin').value;
   let filtered = produtos.filter(p => {
@@ -722,7 +722,7 @@ function renderTable() {
       </td>
     </tr>`;
   }).join('');
-}
+};
 
 function renderOfertas() {
   const ofertaList = document.getElementById('ofertaList');
