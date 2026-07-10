@@ -431,7 +431,6 @@ body { font-family: 'Nunito', sans-serif; background: #f0f2f5; color: var(--dark
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -445,7 +444,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const storage = getStorage(app);
 const auth = getAuth(app);
 
 // ===== PRODUTOS ESTATICOS DO SITE (para importação) =====
@@ -572,20 +570,14 @@ window.saveProduct = async () => {
 
   showLoading(true);
 
-  let imgUrl = document.getElementById('fImgUrl').value.trim();
+  // Safety timeout — never let the spinner hang forever
+  const safetyTimeout = setTimeout(() => {
+    showLoading(false);
+    notify('⏱️ Demorou demais. Verifique sua conexão e tente novamente.', 'error');
+  }, 15000);
 
-  // Upload image if file selected
-  if (uploadedImgBase64) {
-    try {
-      const blob = await fetch(uploadedImgBase64).then(r => r.blob());
-      const storageRef = ref(storage, `produtos/${Date.now()}_${nome.replace(/\s+/g,'_').substring(0,30)}`);
-      await uploadBytes(storageRef, blob);
-      imgUrl = await getDownloadURL(storageRef);
-    } catch(e) {
-      // Storage may need paid plan — fallback to base64
-      imgUrl = uploadedImgBase64;
-    }
-  }
+  // Image: prefer uploaded (already compressed on selection), else URL field
+  let imgUrl = uploadedImgBase64 || document.getElementById('fImgUrl').value.trim();
 
   const data = {
     nome,
@@ -617,6 +609,7 @@ window.saveProduct = async () => {
   } catch(e) {
     notify('Erro ao salvar: ' + e.message, 'error');
   }
+  clearTimeout(safetyTimeout);
   showLoading(false);
 };
 
@@ -800,15 +793,41 @@ function calcOff(preco, antigo) {
 window.handleImgUpload = (input) => {
   const file = input.files[0];
   if (!file) return;
+
+  document.getElementById('uploadText').textContent = 'Processando imagem...';
+
   const reader = new FileReader();
   reader.onload = (e) => {
-    uploadedImgBase64 = e.target.result;
-    const preview = document.getElementById('imgPreview');
-    preview.src = uploadedImgBase64;
-    preview.style.display = 'block';
-    document.getElementById('uploadIcon').style.display = 'none';
-    document.getElementById('uploadText').style.display = 'none';
-    document.getElementById('uploadArea').classList.add('has-img');
+    const img = new Image();
+    img.onload = () => {
+      // Compress: max width 600px, JPEG quality 0.75 — keeps Firestore doc well under 1MB limit
+      const canvas = document.createElement('canvas');
+      const maxW = 600;
+      const scale = Math.min(1, maxW / img.width);
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      uploadedImgBase64 = canvas.toDataURL('image/jpeg', 0.75);
+
+      const preview = document.getElementById('imgPreview');
+      preview.src = uploadedImgBase64;
+      preview.style.display = 'block';
+      document.getElementById('uploadIcon').style.display = 'none';
+      document.getElementById('uploadText').style.display = 'none';
+      document.getElementById('uploadArea').classList.add('has-img');
+
+      const sizeKB = Math.round(uploadedImgBase64.length / 1024);
+      notify(`📸 Imagem otimizada (${sizeKB}KB)`);
+    };
+    img.onerror = () => {
+      notify('Erro ao processar imagem. Tente outra foto.', 'error');
+      document.getElementById('uploadText').textContent = 'Clique para fazer upload';
+    };
+    img.src = e.target.result;
+  };
+  reader.onerror = () => {
+    notify('Erro ao ler o arquivo.', 'error');
   };
   reader.readAsDataURL(file);
 };
