@@ -1564,26 +1564,31 @@ async function loadFromFirebase() {
 function renderProdutos() {
   const grid = document.getElementById('productsGrid');
   if (!grid) return;
-  const filtered = currentFilter === 'todos'
-    ? todosProdutos
-    : todosProdutos.filter(p => {
-        const cats = Array.isArray(p.cats) ? p.cats : (p.cats||'').split(' ');
-        return cats.includes(currentFilter);
-      });
-  if (filtered.length > 0) {
-    // Append Firebase products (keep static ones)
-    const existingIds = new Set(Array.from(grid.querySelectorAll('.product-card[data-id]')).map(c => c.dataset.id));
-    filtered.forEach(p => {
-      if (!existingIds.has(p.id)) {
-        const div = document.createElement('div');
-        div.innerHTML = makeCard(p);
-        const card = div.firstChild;
-        card.dataset.id = p.id;
-        grid.appendChild(card);
-      }
-    });
-  }
-  // Update search index
+
+  // Build set of names already present in the static HTML (normalized)
+  const existingNames = new Set(
+    Array.from(grid.querySelectorAll('.product-card')).map(c =>
+      (c.dataset.name || '').trim().toLowerCase()
+    )
+  );
+
+  todosProdutos.forEach(p => {
+    const normName = (p.nome || '').trim().toLowerCase();
+    // Skip if this exact product name is already shown (avoids duplicating imported products)
+    if (existingNames.has(normName)) return;
+
+    const div = document.createElement('div');
+    div.innerHTML = makeCard(p).trim();
+    const card = div.firstElementChild;
+    if (!card) return;
+    card.dataset.id = p.id;
+    grid.appendChild(card);
+    existingNames.add(normName);
+  });
+
+  // Re-apply current filter to include newly added cards
+  filterProducts(currentFilter, document.querySelector(`.filter-btn[onclick*="'${currentFilter}'"]`));
+
   updateSearchIndex();
 }
 
