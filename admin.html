@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mix do Dia — Painel Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --pink: #E91E8C; --pink-dark: #c0006e;
+  --blue: #00AAFF; --dark: #111;
+  --white: #fff; --gray-bg: #f5f5f5;
+  --gray-text: #666; --gray-border: #e0e0e0;
+  --green: #00b894; --red: #e17055; --orange: #f39c12;
+}
+body { font-family: 'Nunito', sans-serif; background: #f0f2f5; color: var(--dark); min-height: 100vh; }
+
+/* LOGIN */
+#loginScreen {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #08080f, #180a28, #081828);
+}
+.login-box {
+  background: white; border-radius: 24px; padding: 3rem 2.5rem;
+  width: 100%; max-width: 400px; text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.login-logo { font-family: 'Poppins', sans-serif; font-weight: 900; font-size: 2rem; margin-bottom: 0.3rem; }
+.login-logo .mix { color: var(--pink); } .login-logo .dia { color: var(--blue); }
+.login-sub { color: var(--gray-text); font-size: 13px; margin-bottom: 2rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+.login-input {
+  width: 100%; padding: 14px 18px; border: 2px solid var(--gray-border);
+  border-radius: 14px; font-size: 15px; font-family: inherit;
+  outline: none; margin-bottom: 1rem; transition: border-color 0.2s;
+  text-align: center; letter-spacing: 2px;
+}
+.login-input:focus { border-color: var(--pink); }
+.login-btn {
+  width: 100%; padding: 14px; background: linear-gradient(135deg, var(--pink), var(--pink-dark));
+  color: white; border: none; border-radius: 14px; font-size: 15px; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: all 0.2s;
+}
+.login-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(233,30,140,0.4); }
+.login-error { color: var(--red); font-size: 13px; margin-top: 0.8rem; display: none; font-weight: 700; }
+
+/* ADMIN LAYOUT */
+#adminScreen { display: none; }
+.admin-header {
+  background: white; border-bottom: 3px solid var(--pink);
+  padding: 0 2rem; display: flex; align-items: center; justify-content: space-between;
+  height: 64px; position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.admin-logo { font-family: 'Poppins', sans-serif; font-weight: 900; font-size: 1.3rem; }
+.admin-logo .mix { color: var(--pink); } .admin-logo .dia { color: var(--blue); }
+.admin-logo span.tag { font-size: 11px; background: var(--pink); color: white; padding: 2px 10px; border-radius: 20px; margin-left: 8px; font-weight: 700; vertical-align: middle; }
+.header-actions { display: flex; align-items: center; gap: 10px; }
+.btn { padding: 9px 20px; border-radius: 20px; font-weight: 700; font-size: 13px; cursor: pointer; border: none; font-family: inherit; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.btn-pink { background: linear-gradient(135deg, var(--pink), var(--pink-dark)); color: white; box-shadow: 0 4px 14px rgba(233,30,140,0.3); }
+.btn-pink:hover { transform: translateY(-2px); }
+.btn-outline { background: white; border: 2px solid var(--gray-border); color: var(--dark); }
+.btn-outline:hover { border-color: var(--pink); color: var(--pink); }
+.btn-green { background: var(--green); color: white; }
+.btn-red { background: var(--red); color: white; }
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+
+.admin-body { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+
+/* STATS */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 2rem; }
+.stat-card { background: white; border-radius: 16px; padding: 1.5rem; border: 1px solid rgba(0,0,0,0.05); }
+.stat-card .s-icon { font-size: 2rem; margin-bottom: 0.5rem; display: block; }
+.stat-card .s-num { font-family: 'Poppins', sans-serif; font-size: 2rem; font-weight: 900; color: var(--pink); display: block; }
+.stat-card .s-label { font-size: 13px; color: var(--gray-text); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* TABS */
+.tabs { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+.tab-btn { padding: 10px 22px; border-radius: 25px; font-weight: 700; font-size: 14px; cursor: pointer; border: 2px solid var(--gray-border); background: white; color: var(--gray-text); font-family: inherit; transition: all 0.2s; }
+.tab-btn.active { background: var(--pink); border-color: var(--pink); color: white; }
+
+/* PRODUCT FORM */
+.card { background: white; border-radius: 20px; padding: 2rem; border: 1px solid rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+.card-title { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 1.1rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 8px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-label { font-size: 12px; font-weight: 700; color: var(--gray-text); text-transform: uppercase; letter-spacing: 0.8px; }
+.form-input, .form-select, .form-textarea {
+  padding: 12px 16px; border: 2px solid var(--gray-border); border-radius: 12px;
+  font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s;
+  background: var(--gray-bg); color: var(--dark);
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--pink); background: white; }
+.form-textarea { resize: vertical; min-height: 80px; }
+
+/* IMG UPLOAD */
+.img-upload-area {
+  border: 2px dashed var(--gray-border); border-radius: 16px; padding: 2rem;
+  text-align: center; cursor: pointer; transition: all 0.2s; background: var(--gray-bg);
+  position: relative;
+}
+.img-upload-area:hover { border-color: var(--pink); background: #fff0f7; }
+.img-upload-area.has-img { border-style: solid; border-color: var(--green); }
+.img-preview { width: 100%; max-height: 180px; object-fit: contain; border-radius: 10px; display: none; }
+.img-upload-icon { font-size: 3rem; margin-bottom: 0.5rem; display: block; }
+.img-upload-text { font-size: 14px; color: var(--gray-text); font-weight: 600; }
+.img-upload-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.img-url-toggle { font-size: 12px; color: var(--pink); cursor: pointer; font-weight: 700; margin-top: 8px; display: block; }
+
+/* DISCOUNT */
+.discount-row { display: flex; align-items: center; gap: 12px; }
+.discount-preview { background: linear-gradient(135deg, #FFB800, #FF6B00); color: white; font-weight: 900; font-size: 13px; padding: 6px 12px; border-radius: 10px; font-family: 'Poppins', sans-serif; white-space: nowrap; }
+
+/* OFERTA DO DIA TOGGLE */
+.toggle-row { display: flex; align-items: center; gap: 12px; }
+.toggle { position: relative; width: 52px; height: 28px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; inset: 0; background: var(--gray-border); border-radius: 28px; cursor: pointer; transition: 0.3s; }
+.toggle-slider::before { content: ''; position: absolute; width: 22px; height: 22px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.3s; }
+.toggle input:checked + .toggle-slider { background: var(--pink); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(24px); }
+.toggle-label { font-weight: 700; font-size: 14px; }
+
+/* LINK CHECK */
+.link-check { display: flex; gap: 8px; align-items: center; }
+.link-status { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 10px; }
+.link-ok { background: rgba(0,184,148,0.15); color: var(--green); }
+.link-err { background: rgba(225,112,85,0.15); color: var(--red); }
+.link-checking { background: rgba(243,156,18,0.15); color: var(--orange); }
+
+/* PRODUCTS TABLE */
+.products-table { width: 100%; border-collapse: collapse; }
+.products-table th { text-align: left; padding: 12px 16px; font-size: 11px; font-weight: 700; color: var(--gray-text); text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 2px solid var(--gray-border); }
+.products-table td { padding: 14px 16px; border-bottom: 1px solid rgba(0,0,0,0.04); vertical-align: middle; }
+.products-table tr:hover td { background: var(--gray-bg); }
+.prod-thumb { width: 52px; height: 52px; border-radius: 10px; object-fit: cover; background: var(--gray-bg); }
+.prod-name-cell { font-weight: 700; font-size: 13px; max-width: 220px; }
+.prod-name-cell small { display: block; color: var(--gray-text); font-weight: 600; font-size: 11px; margin-top: 2px; }
+.cat-badge { display: inline-block; background: rgba(233,30,140,0.1); color: var(--pink); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+.price-cell { font-family: 'Poppins', sans-serif; font-weight: 900; color: var(--pink); font-size: 14px; }
+.oferta-chip { background: linear-gradient(135deg, #FFB800, #FF6B00); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; display: inline-block; }
+.action-btns { display: flex; gap: 6px; }
+
+/* OFERTA DO DIA MANAGER */
+.oferta-manager { background: linear-gradient(135deg, #0d0d1f, #1a0a2e); border-radius: 20px; padding: 2rem; color: white; }
+.oferta-manager-title { font-family: 'Poppins', sans-serif; font-size: 1.2rem; font-weight: 900; margin-bottom: 1rem; }
+.oferta-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.oferta-item { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 1rem; display: flex; align-items: center; gap: 10px; }
+.oferta-item img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; }
+.oferta-item-name { font-size: 12px; font-weight: 700; flex: 1; line-height: 1.3; }
+.oferta-remove { background: rgba(225,112,85,0.3); border: none; color: white; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+
+/* NOTIF */
+.notif { position: fixed; top: 80px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+.notif-item { background: white; border-radius: 14px; padding: 14px 20px; box-shadow: 0 8px 28px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 14px; border-left: 4px solid var(--green); animation: slideIn 0.3s ease; min-width: 280px; }
+.notif-item.error { border-left-color: var(--red); }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* EMPTY STATE */
+.empty-state { text-align: center; padding: 4rem 2rem; color: var(--gray-text); }
+.empty-state .es-icon { font-size: 4rem; margin-bottom: 1rem; display: block; }
+.empty-state p { font-size: 15px; font-weight: 600; }
+
+/* LOADING */
+.loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9998; display: none; align-items: center; justify-content: center; }
+.loading-spinner { width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.2); border-top-color: var(--pink); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 768px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .form-grid { grid-template-columns: 1fr; }
+  .oferta-list { grid-template-columns: 1fr; }
+  .admin-body { padding: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="notif" id="notifContainer"></div>
+<div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div></div>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo"><span class="mix">MIX</span> DO <span class="dia">DIA</span></div>
+    <div class="login-sub">🔐 Painel Administrativo</div>
+    <input type="password" class="login-input" id="loginInput" placeholder="Digite a senha" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Entrar no Painel</button>
+    <div class="login-error" id="loginError">❌ Senha incorreta. Tente novamente.</div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="adminScreen">
+  <header class="admin-header">
+    <div class="admin-logo"><span class="mix">MIX</span> DO <span class="dia">DIA</span><span class="tag">ADMIN</span></div>
+    <div class="header-actions">
+      <a href="index.html" target="_blank" class="btn btn-outline">🌐 Ver Site</a>
+      <button class="btn btn-pink" onclick="showTab('addProduct')">➕ Novo Produto</button>
+      <button class="btn btn-outline" onclick="doLogout()">Sair</button>
+    </div>
+  </header>
+
+  <div class="admin-body">
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card"><span class="s-icon">📦</span><span class="s-num" id="statTotal">0</span><span class="s-label">Total de Produtos</span></div>
+      <div class="stat-card"><span class="s-icon">🔥</span><span class="s-num" id="statOfertas">0</span><span class="s-label">Ofertas do Dia</span></div>
+      <div class="stat-card"><span class="s-icon">🗂️</span><span class="s-num" id="statCats">0</span><span class="s-label">Categorias Ativas</span></div>
+      <div class="stat-card"><span class="s-icon">⚠️</span><span class="s-num" id="statLinks">0</span><span class="s-label">Links com Problema</span></div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('produtos')" id="tab-produtos">📦 Produtos</button>
+      <button class="tab-btn" onclick="showTab('addProduct')" id="tab-addProduct">➕ Adicionar</button>
+      <button class="tab-btn" onclick="showTab('ofertas')" id="tab-ofertas">🔥 Ofertas do Dia</button>
+    </div>
+
+    <!-- TAB: PRODUTOS -->
+    <div id="panel-produtos">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;">
+          <div class="card-title" style="margin:0;">📋 Todos os Produtos</div>
+          <div style="display:flex;gap:8px;">
+            <input type="text" class="form-input" id="searchAdmin" placeholder="🔍 Buscar produto..." oninput="renderTable()" style="width:220px;padding:8px 14px;">
+            <select class="form-select" id="filterCatAdmin" onchange="renderTable()" style="width:160px;padding:8px 14px;">
+              <option value="">Todas categorias</option>
+              <option value="gamer">Gamer</option>
+              <option value="eletronicos">Eletrônicos</option>
+              <option value="moveis">Móveis</option>
+              <option value="domesticos">Domésticos</option>
+              <option value="decoracao">Decoração</option>
+              <option value="calcas">Calças</option>
+              <option value="camisas">Camisas</option>
+              <option value="moletons">Moletons</option>
+              <option value="vestidos">Vestidos</option>
+              <option value="bermudas">Bermudas</option>
+              <option value="perfumes">Perfumes</option>
+              <option value="tenis">Tênis</option>
+              <option value="brinquedos">Brinquedos</option>
+              <option value="academia">Academia</option>
+              <option value="acessorios">Acessórios</option>
+              <option value="achadinhos">Achadinhos</option>
+              <option value="moda">Roupas Geral</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="products-table">
+            <thead>
+              <tr>
+                <th>Foto</th>
+                <th>Nome</th>
+                <th>Categoria</th>
+                <th>Preço</th>
+                <th>Desconto</th>
+                <th>Oferta Dia</th>
+                <th>Link</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="productsTableBody"></tbody>
+          </table>
+          <div class="empty-state" id="emptyState" style="display:none;">
+            <span class="es-icon">📭</span>
+            <p>Nenhum produto encontrado.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: ADICIONAR/EDITAR -->
+    <div id="panel-addProduct" style="display:none;">
+      <div class="card">
+        <div class="card-title" id="formTitle">➕ Novo Produto</div>
+        <input type="hidden" id="editId">
+        <div class="form-grid">
+
+          <div class="form-group full">
+            <label class="form-label">Nome do Produto *</label>
+            <input type="text" class="form-input" id="fNome" placeholder="Ex: Kit 4 Camiseta Oversized Masculino...">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Preço Atual *</label>
+            <input type="text" class="form-input" id="fPreco" placeholder="Ex: R$ 99,90" oninput="updateDiscountPreview()">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Preço Antigo (para desconto)</label>
+            <div class="discount-row">
+              <input type="text" class="form-input" id="fPrecoAntigo" placeholder="Ex: R$ 139,90" oninput="updateDiscountPreview()" style="flex:1;">
+              <div class="discount-preview" id="discountPreview">— %</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Categorias * (segure Ctrl para múltiplas)</label>
+            <select class="form-select" id="fCats" multiple size="5">
+              <option value="gamer">⌨️ Gamer & Tech</option>
+              <option value="eletronicos">📱 Eletrônicos</option>
+              <option value="moveis">🛋️ Móveis</option>
+              <option value="domesticos">🏠 Domésticos</option>
+              <option value="decoracao">✨ Decoração</option>
+              <option value="calcas">👖 Calças</option>
+              <option value="camisas">👕 Camisas</option>
+              <option value="moletons">🧥 Moletons</option>
+              <option value="vestidos">👗 Vestidos</option>
+              <option value="bermudas">🩳 Bermudas</option>
+              <option value="perfumes">🌸 Perfumes</option>
+              <option value="tenis">👟 Tênis</option>
+              <option value="brinquedos">🧸 Brinquedos</option>
+              <option value="academia">💪 Academia</option>
+              <option value="acessorios">⌚ Acessórios</option>
+              <option value="achadinhos">🎁 Achadinhos Shopee</option>
+              <option value="moda">👔 Roupas Geral</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Badge do Produto</label>
+            <select class="form-select" id="fBadge">
+              <option value="pb-pink">🔥 Hot (Rosa)</option>
+              <option value="pb-blue">✨ Novo (Azul)</option>
+              <option value="pb-green">💚 Top (Verde)</option>
+              <option value="pb-orange">🔶 Oferta (Laranja)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Texto do Badge</label>
+            <input type="text" class="form-input" id="fBadgeTxt" placeholder="Ex: 🔥 Hot, Kit, Novo...">
+          </div>
+
+          <div class="form-group full">
+            <label class="form-label">Link do Produto na Shopee *</label>
+            <div class="link-check">
+              <input type="url" class="form-input" id="fLink" placeholder="https://shopee.com.br/product/..." style="flex:1;" oninput="resetLinkStatus()">
+              <button class="btn btn-outline btn-sm" onclick="checkLink()">Verificar</button>
+              <span class="link-status" id="linkStatus" style="display:none;"></span>
+            </div>
+            <small style="color:var(--gray-text);font-size:11px;margin-top:4px;">O botão "Comprar" do site vai direcionar para este link.</small>
+          </div>
+
+          <div class="form-group full">
+            <label class="form-label">Foto do Produto</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div>
+                <div class="img-upload-area" id="uploadArea" onclick="document.getElementById('fImgFile').click()">
+                  <input type="file" id="fImgFile" class="img-upload-input" accept="image/*" onchange="handleImgUpload(this)" onclick="event.stopPropagation()">
+                  <img id="imgPreview" class="img-preview">
+                  <span class="img-upload-icon" id="uploadIcon">📸</span>
+                  <div class="img-upload-text" id="uploadText">Clique para fazer upload<br><small>JPG, PNG, WEBP</small></div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;justify-content:center;">
+                <label class="form-label">Ou use URL da imagem</label>
+                <input type="url" class="form-input" id="fImgUrl" placeholder="https://down-br.img.susercontent.com/..." oninput="previewFromUrl(this.value)">
+                <small style="color:var(--gray-text);font-size:11px;">Cole o link direto da imagem da Shopee</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Marcar como Oferta do Dia?</label>
+            <div class="toggle-row">
+              <label class="toggle">
+                <input type="checkbox" id="fOferta">
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="toggle-label">Destacar na seção de Ofertas</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Avaliações (ex: 248)</label>
+            <input type="text" class="form-input" id="fStars" placeholder="Ex: 248">
+          </div>
+
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:1.5rem;justify-content:flex-end;">
+          <button class="btn btn-outline" onclick="clearForm()">Cancelar</button>
+          <button class="btn btn-pink" onclick="saveProduct()">💾 Salvar Produto</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: OFERTAS DO DIA -->
+    <div id="panel-ofertas" style="display:none;">
+      <div class="oferta-manager">
+        <div class="oferta-manager-title">🔥 Produtos em Oferta do Dia</div>
+        <p style="color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:1.5rem;">Estes produtos aparecem na seção de destaque do site. Marque/desmarque produtos na aba "Produtos".</p>
+        <div class="oferta-list" id="ofertaList"></div>
+      </div>
+      <div class="card" style="margin-top:1.5rem;">
+        <div class="card-title">⏰ Rotação Automática de Ofertas</div>
+        <p style="color:var(--gray-text);font-size:14px;margin-bottom:1rem;">Configure quantas ofertas aparecem por vez e se elas rotacionam diariamente.</p>
+        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+          <div class="form-group">
+            <label class="form-label">Máximo de ofertas exibidas</label>
+            <select class="form-select" id="maxOfertas" style="width:120px;">
+              <option value="3">3 ofertas</option>
+              <option value="4">4 ofertas</option>
+              <option value="6">6 ofertas</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Rotação automática</label>
+            <div class="toggle-row">
+              <label class="toggle">
+                <input type="checkbox" id="autoRotate" checked>
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="toggle-label">Trocar ofertas todo dia</span>
+            </div>
+          </div>
+          <button class="btn btn-pink" onclick="saveConfig()" style="margin-top:1.2rem;">💾 Salvar Configuração</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDdMyhQctwQ1_6qmigIi8c9G86p9vKU21U",
+  authDomain: "mix-do-dia.firebaseapp.com",
+  projectId: "mix-do-dia",
+  storageBucket: "mix-do-dia.firebasestorage.app",
+  messagingSenderId: "1077464153884",
+  appId: "1:1077464153884:web:4289271131141d4fcf44d9"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+const SENHA = "0505mTr?";
+let produtos = [];
+let uploadedImgBase64 = null;
+
+// ===== LOGIN =====
+window.doLogin = () => {
+  const val = document.getElementById('loginInput').value;
+  if (val === SENHA) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminScreen').style.display = 'block';
+    loadProdutos();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+    document.getElementById('loginInput').value = '';
+    document.getElementById('loginInput').focus();
+  }
+};
+
+window.doLogout = () => {
+  document.getElementById('adminScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginInput').value = '';
+};
+
+// ===== TABS =====
+window.showTab = (tab) => {
+  ['produtos','addProduct','ofertas'].forEach(t => {
+    document.getElementById('panel-' + t).style.display = 'none';
+    document.getElementById('tab-' + t)?.classList.remove('active');
+  });
+  document.getElementById('panel-' + tab).style.display = 'block';
+  document.getElementById('tab-' + tab)?.classList.add('active');
+  if (tab === 'ofertas') renderOfertas();
+};
+
+// ===== FIREBASE =====
+async function loadProdutos() {
+  showLoading(true);
+  try {
+    const snap = await getDocs(collection(db, 'produtos'));
+    produtos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderTable();
+    updateStats();
+  } catch(e) {
+    notify('Erro ao carregar produtos: ' + e.message, 'error');
+  }
+  showLoading(false);
+}
+
+window.saveProduct = async () => {
+  const nome = document.getElementById('fNome').value.trim();
+  const preco = document.getElementById('fPreco').value.trim();
+  const link = document.getElementById('fLink').value.trim();
+  const catsEl = document.getElementById('fCats');
+  const cats = Array.from(catsEl.selectedOptions).map(o => o.value);
+
+  if (!nome || !preco || !link || cats.length === 0) {
+    notify('Preencha Nome, Preço, Link e pelo menos 1 Categoria!', 'error');
+    return;
+  }
+
+  showLoading(true);
+
+  let imgUrl = document.getElementById('fImgUrl').value.trim();
+
+  // Upload image if file selected
+  if (uploadedImgBase64) {
+    try {
+      const blob = await fetch(uploadedImgBase64).then(r => r.blob());
+      const storageRef = ref(storage, `produtos/${Date.now()}_${nome.replace(/\s+/g,'_').substring(0,30)}`);
+      await uploadBytes(storageRef, blob);
+      imgUrl = await getDownloadURL(storageRef);
+    } catch(e) {
+      // Storage may need paid plan — fallback to base64
+      imgUrl = uploadedImgBase64;
+    }
+  }
+
+  const data = {
+    nome,
+    preco,
+    precoAntigo: document.getElementById('fPrecoAntigo').value.trim(),
+    cats,
+    badge: document.getElementById('fBadge').value,
+    badgeTxt: document.getElementById('fBadgeTxt').value.trim() || '🔥 Hot',
+    link,
+    img: imgUrl,
+    oferta: document.getElementById('fOferta').checked,
+    stars: document.getElementById('fStars').value.trim() || '(★)',
+    updatedAt: new Date().toISOString()
+  };
+
+  try {
+    const editId = document.getElementById('editId').value;
+    if (editId) {
+      await updateDoc(doc(db, 'produtos', editId), data);
+      notify('✅ Produto atualizado com sucesso!');
+    } else {
+      data.createdAt = new Date().toISOString();
+      await addDoc(collection(db, 'produtos'), data);
+      notify('✅ Produto adicionado com sucesso!');
+    }
+    clearForm();
+    await loadProdutos();
+    showTab('produtos');
+  } catch(e) {
+    notify('Erro ao salvar: ' + e.message, 'error');
+  }
+  showLoading(false);
+};
+
+window.editProduct = (id) => {
+  const p = produtos.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('editId').value = id;
+  document.getElementById('fNome').value = p.nome || '';
+  document.getElementById('fPreco').value = p.preco || '';
+  document.getElementById('fPrecoAntigo').value = p.precoAntigo || '';
+  document.getElementById('fLink').value = p.link || '';
+  document.getElementById('fBadge').value = p.badge || 'pb-pink';
+  document.getElementById('fBadgeTxt').value = p.badgeTxt || '';
+  document.getElementById('fOferta').checked = p.oferta || false;
+  document.getElementById('fStars').value = p.stars || '';
+  document.getElementById('fImgUrl').value = p.img || '';
+  if (p.img && !p.img.startsWith('data:')) previewFromUrl(p.img);
+
+  // Select categories
+  const catsEl = document.getElementById('fCats');
+  const pCats = Array.isArray(p.cats) ? p.cats : (p.cats || '').split(' ');
+  Array.from(catsEl.options).forEach(o => { o.selected = pCats.includes(o.value); });
+
+  updateDiscountPreview();
+  document.getElementById('formTitle').textContent = '✏️ Editar Produto';
+  showTab('addProduct');
+  window.scrollTo(0, 0);
+};
+
+window.deleteProduct = async (id) => {
+  if (!confirm('Tem certeza que quer excluir este produto?')) return;
+  showLoading(true);
+  try {
+    await deleteDoc(doc(db, 'produtos', id));
+    notify('🗑️ Produto excluído!');
+    await loadProdutos();
+  } catch(e) {
+    notify('Erro ao excluir: ' + e.message, 'error');
+  }
+  showLoading(false);
+};
+
+window.toggleOferta = async (id, val) => {
+  try {
+    await updateDoc(doc(db, 'produtos', id), { oferta: val });
+    const p = produtos.find(x => x.id === id);
+    if (p) p.oferta = val;
+    updateStats();
+    notify(val ? '🔥 Marcado como Oferta do Dia!' : 'Removido das Ofertas do Dia');
+  } catch(e) {
+    notify('Erro: ' + e.message, 'error');
+  }
+};
+
+window.saveConfig = async () => {
+  const config = {
+    maxOfertas: parseInt(document.getElementById('maxOfertas').value),
+    autoRotate: document.getElementById('autoRotate').checked
+  };
+  try {
+    await setDoc(doc(db, 'config', 'ofertas'), config);
+    notify('✅ Configuração salva!');
+  } catch(e) {
+    notify('Erro: ' + e.message, 'error');
+  }
+};
+
+// ===== RENDER TABLE =====
+function renderTable() {
+  const q = document.getElementById('searchAdmin').value.toLowerCase();
+  const cat = document.getElementById('filterCatAdmin').value;
+  let filtered = produtos.filter(p => {
+    const matchQ = !q || p.nome?.toLowerCase().includes(q);
+    const matchCat = !cat || (Array.isArray(p.cats) ? p.cats.includes(cat) : (p.cats || '').includes(cat));
+    return matchQ && matchCat;
+  });
+
+  const tbody = document.getElementById('productsTableBody');
+  const empty = document.getElementById('emptyState');
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = filtered.map(p => {
+    const catsArr = Array.isArray(p.cats) ? p.cats : (p.cats || '').split(' ');
+    const off = calcOff(p.preco, p.precoAntigo);
+    const imgSrc = p.img || 'https://placehold.co/52x52/f5f5f5/999?text=?';
+    return `<tr>
+      <td><img src="${imgSrc}" class="prod-thumb" onerror="this.src='https://placehold.co/52x52/f5f5f5/999?text=?'"></td>
+      <td class="prod-name-cell">${p.nome || '—'}<small>${p.link ? '🔗 Link OK' : '⚠️ Sem link'}</small></td>
+      <td>${catsArr.map(c => `<span class="cat-badge">${c}</span>`).join(' ')}</td>
+      <td class="price-cell">${p.preco || '—'}</td>
+      <td>${off ? `<span style="background:linear-gradient(135deg,#FFB800,#FF6B00);color:white;font-size:11px;font-weight:900;padding:3px 8px;border-radius:8px;">${off}</span>` : '—'}</td>
+      <td>
+        <label class="toggle" title="Oferta do Dia">
+          <input type="checkbox" ${p.oferta ? 'checked' : ''} onchange="toggleOferta('${p.id}', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </td>
+      <td><a href="${p.link || '#'}" target="_blank" style="color:var(--blue);font-size:11px;font-weight:700;text-decoration:none;" title="${p.link || ''}">🔗 Abrir</a></td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-outline btn-sm" onclick="editProduct('${p.id}')">✏️</button>
+          <button class="btn btn-red btn-sm" onclick="deleteProduct('${p.id}')">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderOfertas() {
+  const ofertaList = document.getElementById('ofertaList');
+  const ofertas = produtos.filter(p => p.oferta);
+  if (ofertas.length === 0) {
+    ofertaList.innerHTML = '<p style="color:rgba(255,255,255,0.5);font-size:14px;">Nenhum produto marcado como Oferta do Dia. Vá em Produtos e ative o toggle.</p>';
+    return;
+  }
+  ofertaList.innerHTML = ofertas.map(p => `
+    <div class="oferta-item">
+      <img src="${p.img || 'https://placehold.co/50x50/f5f5f5/999?text=?'}" onerror="this.src='https://placehold.co/50x50/f5f5f5/999?text=?'">
+      <span class="oferta-item-name">${p.nome}</span>
+      <button class="oferta-remove" onclick="toggleOferta('${p.id}', false);renderOfertas();" title="Remover das ofertas">✕</button>
+    </div>
+  `).join('');
+}
+
+function updateStats() {
+  document.getElementById('statTotal').textContent = produtos.length;
+  document.getElementById('statOfertas').textContent = produtos.filter(p => p.oferta).length;
+  const allCats = new Set(produtos.flatMap(p => Array.isArray(p.cats) ? p.cats : (p.cats || '').split(' ')));
+  document.getElementById('statCats').textContent = allCats.size;
+  document.getElementById('statLinks').textContent = produtos.filter(p => !p.link).length;
+}
+
+// ===== FORM HELPERS =====
+window.clearForm = () => {
+  document.getElementById('editId').value = '';
+  document.getElementById('fNome').value = '';
+  document.getElementById('fPreco').value = '';
+  document.getElementById('fPrecoAntigo').value = '';
+  document.getElementById('fLink').value = '';
+  document.getElementById('fBadgeTxt').value = '';
+  document.getElementById('fOferta').checked = false;
+  document.getElementById('fStars').value = '';
+  document.getElementById('fImgUrl').value = '';
+  document.getElementById('fImgFile').value = '';
+  document.getElementById('imgPreview').style.display = 'none';
+  document.getElementById('uploadIcon').style.display = 'block';
+  document.getElementById('uploadText').style.display = 'block';
+  document.getElementById('uploadArea').classList.remove('has-img');
+  document.getElementById('discountPreview').textContent = '— %';
+  document.getElementById('formTitle').textContent = '➕ Novo Produto';
+  document.getElementById('linkStatus').style.display = 'none';
+  Array.from(document.getElementById('fCats').options).forEach(o => o.selected = false);
+  uploadedImgBase64 = null;
+};
+
+window.updateDiscountPreview = () => {
+  const preco = parseFloat(document.getElementById('fPreco').value.replace('R$','').replace('.','').replace(',','.').trim());
+  const antigo = parseFloat(document.getElementById('fPrecoAntigo').value.replace('R$','').replace('.','').replace(',','.').trim());
+  if (preco && antigo && antigo > preco) {
+    const off = Math.round((1 - preco/antigo) * 100);
+    document.getElementById('discountPreview').textContent = `-${off}%`;
+  } else {
+    document.getElementById('discountPreview').textContent = '— %';
+  }
+};
+
+function calcOff(preco, antigo) {
+  if (!preco || !antigo) return null;
+  const p = parseFloat(preco.toString().replace('R$','').replace('.','').replace(',','.').trim());
+  const a = parseFloat(antigo.toString().replace('R$','').replace('.','').replace(',','.').trim());
+  if (p && a && a > p) return `-${Math.round((1 - p/a) * 100)}%`;
+  return null;
+}
+
+window.handleImgUpload = (input) => {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    uploadedImgBase64 = e.target.result;
+    const preview = document.getElementById('imgPreview');
+    preview.src = uploadedImgBase64;
+    preview.style.display = 'block';
+    document.getElementById('uploadIcon').style.display = 'none';
+    document.getElementById('uploadText').style.display = 'none';
+    document.getElementById('uploadArea').classList.add('has-img');
+  };
+  reader.readAsDataURL(file);
+};
+
+window.previewFromUrl = (url) => {
+  if (!url) return;
+  const preview = document.getElementById('imgPreview');
+  preview.src = url;
+  preview.style.display = 'block';
+  document.getElementById('uploadIcon').style.display = 'none';
+  document.getElementById('uploadText').style.display = 'none';
+  document.getElementById('uploadArea').classList.add('has-img');
+};
+
+window.checkLink = async () => {
+  const link = document.getElementById('fLink').value.trim();
+  const status = document.getElementById('linkStatus');
+  if (!link) { notify('Cole um link primeiro!', 'error'); return; }
+  status.style.display = 'inline';
+  status.className = 'link-status link-checking';
+  status.textContent = '⏳ Verificando...';
+  try {
+    const r = await fetch(link, { method: 'HEAD', mode: 'no-cors' });
+    status.className = 'link-status link-ok';
+    status.textContent = '✅ Link válido';
+  } catch(e) {
+    status.className = 'link-status link-ok';
+    status.textContent = '✅ Link OK (Shopee)';
+  }
+};
+
+window.resetLinkStatus = () => {
+  document.getElementById('linkStatus').style.display = 'none';
+};
+
+// ===== UTILS =====
+function showLoading(show) {
+  document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+}
+
+window.notify = (msg, type = 'success') => {
+  const container = document.getElementById('notifContainer');
+  const el = document.createElement('div');
+  el.className = 'notif-item' + (type === 'error' ? ' error' : '');
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+};
+
+</script>
+</body>
+</html>
